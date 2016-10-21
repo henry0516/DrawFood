@@ -9,7 +9,6 @@ GROUPS = ['General', 'Expensive', 'Taste', 'Cheap']
 app = Flask(__name__)
 app.config['SECRET_KEY'] = "random string"
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///members.db'
-#app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://admin:pass@localhost/MyTest'
 
 db = SQLAlchemy(app)
 
@@ -135,7 +134,10 @@ def update():
                 {"group_name": request.form.get('group_name')})
             db.session.commit()
 
-            outputMsg = request.form.get('select_name') + ' was successfully update group to [' + request.form.get('group_name') + ']'
+            outputMsg = request.form.get('select_name')
+            + ' was successfully update group to ['
+            + request.form.get('group_name')
+            + ']'
 
             flash(outputMsg)
             return redirect(url_for('show_all'))
