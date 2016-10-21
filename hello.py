@@ -7,11 +7,6 @@ from flask_sqlalchemy import SQLAlchemy
 GROUPS = ['General', 'Expensive', 'Taste', 'Cheap']
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = "random string"
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///members.db'
-
-db = SQLAlchemy(app)
-
 
 @app.route('/')
 def hello():
@@ -24,35 +19,18 @@ def hello():
 def index():
     return render_template('index.html')
 
-
-class members(db.Model):
-    __tablename__ = 'members'
-    id = db.Column('id', db.Integer, primary_key=True)
-    name = db.Column(db.String(100))
-    group_name = db.Column(db.String(50))
-
-
-def __init__(self, name, group_name):
-    self.name = name
-    self.group_name = group_name
-
-
 @app.route('/showAll', methods=['GET', 'POST'])
 def show_all():
-    selectGroup_name = request.form.get('select_group_name')
-
-    if selectGroup_name == 'ALL' or selectGroup_name is None:
-        selectMembers = members.query.all()
-        count = members.query.count()
-    else:
-        selectMembers = members.query.filter_by(
-            group_name=selectGroup_name).all()
-        count = members.query.filter_by(group_name=selectGroup_name).count()
-
     myGroups = []
     for g in GROUPS:
         myGroups.append(g)
     myGroups.append('ALL')
+    print(request.form.get('select_group_name'))
+
+    from operation import showData
+    selectMembers = showData(request.form.get('select_group_name'))
+
+    count = len(selectMembers)
 
     return render_template('show_all.html',
                            members=selectMembers,
@@ -68,12 +46,8 @@ def new():
         else:
             print(request.form.get('name'), '+',
                   request.form.get('group_name'))
-            member = members(
-                name=request.form['name'],
-                group_name=request.form['group_name'])
-
-            db.session.add(member)
-            db.session.commit()
+            from operation import addData
+            addData(request.form['name'], request.form['group_name'])
 
             flash('Record was successfully added')
             return redirect(url_for('show_all'))
@@ -88,20 +62,12 @@ def delete():
         myfoodList.append(g.name)
 
     if request.method == 'POST':
-        print('you select ', request.form.get('select_name'))
         if request.form.get('select_name') == 'none':
             flash('Please enter all the fields', 'error')
         else:
-
-            member = members.query.filter_by(
-                name=request.form.get('select_name'))
-            # print( member[0].name, '+', member[0].group_name)
-
-            # two way to delete record
-            # db.session.query(members).filter(members.name == member[0].name).delete()
-            db.session.query(members).filter_by(name=member[0].name).delete()
-
-            db.session.commit()
+            print('you select ', request.form.get('select_name'))
+            from operation import deleteData
+            deleteData(request.form.get('select_name'))
 
             outputMsg = request.form.get(
                 'select_name') + ' was successfully deleted'
@@ -119,25 +85,15 @@ def update():
         myfoodList.append(g.name)
 
     if request.method == 'POST':
-        print('you select food is ', request.form.get('select_name'),
-              ', group is ', request.form.get('group_name'))
         if request.form.get('select_name') == 'none':
             flash('Please enter all the fields', 'error')
         else:
+            print('you select food is ', request.form.get('select_name'),
+                  ', group is ', request.form.get('group_name'))
+            from operation import updateData
+            updateData(request.form.get('select_name'), request.form.get('group_name'))
 
-            member = members.query.filter_by(
-                name=request.form.get('select_name'))
-            # print( member[0].name, '+', member[0].group_name)
-
-            # db.session.query(members).filter(members.name == member[0].name).update({'group_name': request.form.get('group_name')})
-            db.session.query(members).filter_by(name=member[0].name).update(
-                {"group_name": request.form.get('group_name')})
-            db.session.commit()
-
-            outputMsg = request.form.get('select_name')
-            + ' was successfully update group to ['
-            + request.form.get('group_name')
-            + ']'
+            outputMsg = request.form.get('select_name') + ' was successfully update group to [' + request.form.get('group_name') + ']'
 
             flash(outputMsg)
             return redirect(url_for('show_all'))
@@ -217,6 +173,7 @@ def draw():
 
 @app.route('/history')
 def history():
+    """
     db = get_db()
     recent_histories = db.execute(
         'SELECT m.name, m.group_name, d.time '
@@ -225,6 +182,17 @@ def history():
         'ORDER BY d.time DESC '
         'LIMIT 10'
     ).fetchall()
+    """
+    from operation import showHistories
+
+    recent_histories = []
+    for list in showHistories():
+        eachMember = []
+        eachMember.append(list.member.name)
+        eachMember.append(list.member.group_name)
+        eachMember.append(list.time)
+        recent_histories.append(eachMember)
+
     return render_template(
         'history.html',
         recent_histories=recent_histories
