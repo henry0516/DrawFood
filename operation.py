@@ -1,5 +1,6 @@
 from hello import app
 from flask_sqlalchemy import SQLAlchemy
+from datetime import datetime
 app.config['SECRET_KEY'] = "random string"
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///members.db'
 #app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://snake_eyes:123456@140.96.29.153/MyTest'
@@ -22,9 +23,9 @@ class members(db.Model):
 
 class draw_histories(db.Model):
     __tablename__ = 'draw_histories'
-    draw_histories_id = db.Column(db.Integer, primary_key=True)
+    draw_histories_id = db.Column('draw_histories_id', db.Integer, primary_key=True)
     memberid = db.Column(db.Integer, db.ForeignKey('members.id'))
-    time = db.Column(db.DATETIME)
+    time = db.Column(db.DATETIME, default=datetime.now)
     member = db.relationship('members', foreign_keys=memberid)
 
 def showData(selectGroup_name):
@@ -67,3 +68,20 @@ def showHistories():
     histories = draw_histories.query.all()
 
     return histories
+
+def getDataById(mId):
+    if mId == 'ALL' or mId is None:
+        selectMembers = members.query.all()
+    else:
+        selectMembers = members.query.filter_by(
+            id=mId).all()
+
+    return selectMembers
+
+def addHistory(m):
+    if m is not None:
+        print(m[0].id)
+        drawHistory = draw_histories(memberid=m[0].id)
+        #print(drawHistory.member.name, '+', drawHistory.member.group_name)
+        db.session.add(drawHistory)
+        db.session.commit()

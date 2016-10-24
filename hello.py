@@ -56,9 +56,12 @@ def new():
 
 @app.route('/delete', methods=['GET', 'POST'])
 def delete():
-    memberList = members.query.all()
+    from operation import showData
+    selectMembers = showData(request.form.get('select_group_name'))
+
+   # memberList = members.query.all()
     myfoodList = ['none']
-    for g in memberList:
+    for g in selectMembers:
         myfoodList.append(g.name)
 
     if request.method == 'POST':
@@ -78,10 +81,12 @@ def delete():
 
 @app.route('/update', methods=['GET', 'POST'])
 def update():
-    print('update function')
-    memberList = members.query.all()
+    from operation import showData
+    selectMembers = showData(request.form.get('select_group_name'))
+
+    #memberList = members.query.all()
     myfoodList = []
-    for g in memberList:
+    for g in selectMembers:
         myfoodList.append(g.name)
 
     if request.method == 'POST':
@@ -124,7 +129,40 @@ def close_connection(exception):
     if db is not None:
         db.close()
 
+@app.route('/draw', methods=['POST'])
+def draw():
 
+    group_name = request.form.get('group_name', 'ALL')
+    print(group_name)
+
+    from operation import showData
+    selectMembers = showData(group_name)
+
+    valid_member_ids = []
+    for row in selectMembers:
+        valid_member_ids.append(row.id)
+
+    # If no valid members return 404 (unlikely)
+    if not valid_member_ids:
+        err_msg = "<p>No members in group '%s'</p>" % group_name
+        return err_msg, 404
+
+    lucky_member_id = random.choice(valid_member_ids)
+
+    from operation import getDataById
+    targetMember = getDataById(lucky_member_id)
+
+    print(targetMember[0].name)
+    from operation import addHistory
+    addHistory(targetMember)
+
+    return render_template(
+        'draw.html',
+        name=targetMember[0].name,
+        group=targetMember[0].group_name,
+    )
+
+"""
 @app.route('/draw', methods=['POST'])
 def draw():
     # Get the database connection
@@ -170,10 +208,11 @@ def draw():
         group=member_group_name,
     )
 
-
+"""
+"""
 @app.route('/history')
 def history():
-    """
+
     db = get_db()
     recent_histories = db.execute(
         'SELECT m.name, m.group_name, d.time '
@@ -181,8 +220,10 @@ def history():
         'WHERE m.id == d.memberid '
         'ORDER BY d.time DESC '
         'LIMIT 10'
-    ).fetchall()
-    """
+    ).fetch
+"""
+@app.route('/history')
+def history():
     from operation import showHistories
 
     recent_histories = []
